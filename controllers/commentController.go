@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -188,6 +189,14 @@ func PostComment(c *gin.Context) {
 		return
 	}
 
+	// 如果是帖子类型，更新帖子的评论数
+	if sourceType == "post" {
+		if err := dao.IncrementPostCommentCount(sourceID); err != nil {
+			log.Printf("更新帖子评论数失败: %v", err)
+			// 这里不返回错误，因为评论已经创建成功，只是统计更新失败
+		}
+	}
+
 	// 获取更新后的评论列表
 	comments, err := dao.GetCommentWithUserAndDocument(sourceID, sourceType)
 	if err != nil {
@@ -285,6 +294,18 @@ func GetDocumentComments(c *gin.Context) {
 
 // GET /api/admin/comments
 func GetAllComments(c *gin.Context) {
+	// 验证管理员身份
+	claims, exists := c.Get(constant.UserClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, nil, constant.GetUserInfoFailed)
+		return
+	}
+	userClaims := claims.(*utils.MyClaims)
+	if userClaims.Role != "admin" {
+		response.Fail(c, http.StatusForbidden, nil, constant.NoPermission)
+		return
+	}
+
 	comments, err := dao.GetAllCommentsWithUserAndDocument()
 	if err != nil {
 		response.Fail(c, constant.StatusInternalServerError, nil, constant.MsgGetCommentListFailed)
@@ -298,6 +319,18 @@ func GetAllComments(c *gin.Context) {
 
 // DELETE /api/admin/comment
 func DeleteComment(c *gin.Context) {
+	// 验证管理员身份
+	claims, exists := c.Get(constant.UserClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, nil, constant.GetUserInfoFailed)
+		return
+	}
+	userClaims := claims.(*utils.MyClaims)
+	if userClaims.Role != "admin" {
+		response.Fail(c, http.StatusForbidden, nil, constant.NoPermission)
+		return
+	}
+
 	commentIDStr, err := getCommentIDFromQuery(c)
 	if err != nil {
 		response.Fail(c, constant.StatusBadRequest, nil, err.Error())
@@ -310,7 +343,7 @@ func DeleteComment(c *gin.Context) {
 		return
 	}
 
-	_, err = dao.GetCommentByID(commentID)
+	comment, err := dao.GetCommentByID(commentID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			response.Fail(c, constant.StatusNotFound, nil, constant.MsgCommentNotFound)
@@ -318,6 +351,14 @@ func DeleteComment(c *gin.Context) {
 		}
 		response.Fail(c, constant.StatusInternalServerError, nil, constant.MsgDatabaseQueryFailed)
 		return
+	}
+
+	// 如果是帖子类型，先更新帖子的评论数（在删除前）
+	if comment.SourceType == "post" {
+		if err := dao.DecrementPostCommentCount(comment.SourceID); err != nil {
+			log.Printf("更新帖子评论数失败: %v", err)
+			// 这里不返回错误，继续执行删除操作
+		}
 	}
 
 	err = dao.DeleteComment(commentID)
@@ -410,6 +451,14 @@ func DeleteUserComment(c *gin.Context) {
 		if comment.UserID != userID {
 			response.Fail(c, constant.StatusNotFound, nil, constant.MsgCommentNotFoundOrNoAccess)
 			return
+		}
+	}
+
+	// 如果是帖子类型，先更新帖子的评论数（在删除前）
+	if comment.SourceType == "post" {
+		if err := dao.DecrementPostCommentCount(comment.SourceID); err != nil {
+			log.Printf("更新帖子评论数失败: %v", err)
+			// 这里不返回错误，继续执行删除操作
 		}
 	}
 

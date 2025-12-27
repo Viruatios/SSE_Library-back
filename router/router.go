@@ -43,7 +43,7 @@ func SetupRouter() *gin.Engine {
 		authed.GET("/chat/sessions", controllers.GetSessionList)           // 获取当前用户的所有会话列表
 		authed.POST("/post", controllers.CreatePost)                       // 发帖
 		authed.GET("/getPosts", controllers.GetPostList)                   // 获取帖子列表
-		authed.GET("/post/:post_id", controllers.GetPostDetail)            // 获取帖子详情
+		authed.GET("/post/:postId", controllers.GetPostDetail)             // 获取帖子详情
 		// 评论相关路由：必须在 /post/:post_id 之前，使用更具体的路径避免路由冲突
 		authed.GET("/comments/post/:sourceId", controllers.GetPostComments)         // 获取帖子的评论
 		authed.GET("/comments/document/:sourceId", controllers.GetDocumentComments) // 获取文档的评论
@@ -62,6 +62,7 @@ func SetupRouter() *gin.Engine {
 			userApi.DELETE("/comment", controllers.DeleteUserComment)      // 用户删除自己的评论（需要认证）
 			userApi.GET("/hotCategories", controllers.GetHotCategories)    // 获取热门分类
 			userApi.GET("/checkFavorite", controllers.CheckFavorite)       // 获取收藏列表
+			userApi.GET("/postList/:userId", controllers.GetUserPostList)
 		}
 
 		// 管理员相关操作
@@ -72,9 +73,9 @@ func SetupRouter() *gin.Engine {
 			adminApi.GET("/user", controllers.GetUsers)                             //搜索单个用户
 			adminApi.GET("/usersList", controllers.GetUsers)                        // GetUsers同时支持获取列表和搜索
 			adminApi.PUT("/document/status", controllers.AdminModifyDocumentStatus) //管理员修改文档状态
+			adminApi.GET("/docList", controllers.AdminGetDocumentList)              // 管理员获取文档列表
 			adminApi.GET("/comments", controllers.GetAllComments)                   // 管理员获取所有评论（需要认证）
 			adminApi.DELETE("/comment", controllers.DeleteComment)                  // 管理员删除评论（需要认证）
-
 		}
 	}
 
