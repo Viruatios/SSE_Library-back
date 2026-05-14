@@ -16,16 +16,35 @@ func SetupRouter() *gin.Engine {
 	api.POST("/VCode", controllers.SendVerificationCode) // 请求验证码（临时生成，采用POST）
 	api.PUT("/Password", controllers.ChangePassword)     //修改密码
 	api.GET("/ws", controllers.ConnectWS)                // WebSocket连接
+	// AI 聊天测试接口
+	api.GET("/ai/chat/test", controllers.TestStreamChat)          // 测试 AI 聊天流式响应（直接构造请求示例）
+	api.GET("/ai/chat/test-title", controllers.TestGenerateTitle) // 测试会话标题生成
 
 	// --- 需要认证才能访问的路由 ---
 	authed := api.Group("/")
 	authed.Use(middlewares.AuthMiddleware())
 	{
+		// AI 会话接口
+		authed.POST("/ai/chat/sessions", controllers.CreateAISession)
+		authed.GET("/ai/chat/sessions", controllers.GetAISessions)
+		authed.PUT("/ai/chat/sessions", controllers.UpdateAISession)
+		authed.DELETE("/ai/chat/sessions/:sessionId", controllers.DeleteAISessions)
+
+		// AI 消息接口
+		authed.POST("/ai/chat/sessions/:sessionId/stop", controllers.CancelAISessionStream)
+		authed.POST("/ai/chat/sessions/:sessionId/messages", controllers.SendAISessionMessages) // 用户发送问题并获取流式输出
+		authed.POST("/ai/:contentType/:contentId/summary", controllers.PostAISummary)          // 查看/生成摘要（JSON，Redis 缓存）
+		authed.GET("/ai/chat/sessions/:sessionId/messages", controllers.GetAISessionMessages)   // 获取会话历史消息
+
+		// AI推荐书籍接口
+		authed.GET("/ai/:userId/book-recommendations", controllers.GetBookRecommendations) // 获取书籍推荐
+
 		// 通用接口
 		authed.GET("/comment/:commentId", controllers.GetSingleComment)    // 获取单条评论
 		authed.GET("/user/:user_id", controllers.GetProfile)               // 查看个人主页
 		authed.PUT("/user/:user_id", controllers.ModifyInfo)               // 修改个人资料
 		authed.GET("/document/:id", controllers.GetDocumentByID)           // 获取文档详情
+		authed.POST("/document/:id/summary/stream", controllers.StreamDocumentSummary) // PDF 正文摘要（SSE，StreamChat）
 		authed.GET("/searchdoc", controllers.SearchDocument)               // 搜索文档
 		authed.GET("/documents", controllers.GetDocumentList)              // 获取文档列表
 		authed.PUT("/document", controllers.ModifyDocument)                // 文件信息修改（上传该文件的用户才能修改）

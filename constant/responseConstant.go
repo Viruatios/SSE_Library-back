@@ -58,6 +58,11 @@ const (
 	DocumentTagGetFailed        = "文档标签关联查询失败"
 	DocumentIDLack              = "文档ID不能为空"
 	DocumentNotOpen             = "文档状态不是公开的，无法收藏"
+	DocumentSummaryNotPDF       = "仅支持通过 PDF 链接存储的文档生成摘要"
+	DocumentSummaryNoText       = "未能从 PDF 中解析出有效文本"
+	DocumentSummaryAccessDenied = "无权对此文档生成摘要"
+	AISummarySuccess              = "获取摘要成功"
+	AISummaryInvalidContentType   = "contentType 仅支持 document 或 post"
 )
 
 // Tag相关常量
@@ -212,6 +217,22 @@ const (
 	MarkReadSuccess         = "标记已读成功"
 	InvalidMessageType      = "消息类型无效"
 	GetUnreadMessageSuccess = "获取总的未读消息数量成功"
+)
+
+// AI会话相关常量
+const (
+	CreateAISessionSuccess = "AI会话创建成功"
+	CreateAISessionFailed  = "AI会话创建失败"
+	GetAISessionsSuccess   = "获取AI会话列表成功"
+	GetAISessionsFailed    = "获取AI会话列表失败"
+	AISessionNotExist      = "AI会话不存在"
+	DeleteAISessionSuccess = "AI会话删除成功"
+	DeleteAISessionFailed  = "AI会话删除失败"
+	UpdateAISessionSuccess = "AI会话更新成功"
+	UpdateAISessionFailed  = "AI会话更新失败"
+	CancelAISessionSuccess = "终止AI输出成功"
+	CancelAISessionFailed  = "终止AI输出失败"
+	AISessionTaskNotExist  = "任务不存在或已结束"
 )
 
 // 帖子相关常量
